@@ -9,7 +9,8 @@ The first demo creates a 3-plane CVPixelBuffer object to store the Yp, Cb and Cr
 
 The second demo creates a biplanar CVPixelBuffer object to store the Yp and CbCr components.
 
-It is recommended to convert the RGBA image to an ARGB vImage_Buffer object before the conversion from RGBA color space to Y'CbCr color space.
+
+It is advisable to convert the RGBA image to an ARGB vImage_Buffer object before the conversion from RGBA color space to Y'CbCr color space.
 
 <br />
 <br />
