@@ -202,6 +202,7 @@ class ViewController: NSViewController
             kCVPixelBufferIOSurfacePropertiesKey as String : [String: Any]()
             ] as CFDictionary
 
+        // Create a triplanar CVPixelBuffer object.
         let result = CVPixelBufferCreate(
             kCFAllocatorDefault,
             cgImage.width, cgImage.height,
@@ -232,69 +233,16 @@ class ViewController: NSViewController
             nil,
             vImage_Flags(kvImageNoFlags))
 
-        // On return from the above call, the 2D `data` regions will be populated with pixels.
-
-        // Copy pixels from the vImage_Buffers objects to the corresponding CVPixelBuffer planes.
-        copyPixels(from: ypCbCr8PlanarBuffers,
-                   to: cvPixelBuffer!)
+        // On return from the above call, the 2D `data` regions of the 3 vImage_Buffer objects
+        // and 3 planes of the CVPixelBuffer will be populated with pixels.
         CVPixelBufferUnlockBaseAddress(cvPixelBuffer!, .readOnly)
         return cvPixelBuffer
     }
 
-    func copyPixels(from sourceBuffers: [vImage_Buffer],
-                    to cvPixelBuffer: CVPixelBuffer)
-    {
-        assert(CVPixelBufferGetPlaneCount(cvPixelBuffer) == 3,
-               "3 planes expected")
-        CVPixelBufferLockBaseAddress(cvPixelBuffer,
-                                     CVPixelBufferLockFlags(rawValue: 0))
-        // For debugging:
-        // vImage_Buffer(data: Optional(0x0000000108800020), height: 600, width: 800, rowBytes: 800)
-        // vImage_Buffer(data: Optional(0x0000000108875320), height: 600, width: 800, rowBytes: 416)
-        // vImage_Buffer(data: Optional(0x0000000108893aa0), height: 600, width: 800, rowBytes: 416)
-        //<Plane 0 width=800 height=600 bytesPerRow=800>    // 1 byte/pixel
-        //<Plane 1 width=400 height=300 bytesPerRow=416>    // 1 byte/pixel
-        //<Plane 2 width=400 height=300 bytesPerRow=416>    // 1 byte/pixel
-
-    /*
-        // Unoptimised copy: copy row by row
-        for planeIndex in 0 ..< sourceBuffers.count {
-            var destBaseAddress = CVPixelBufferGetBaseAddressOfPlane(cvPixelBuffer, planeIndex)
-            let bytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(cvPixelBuffer, planeIndex)
-            let height = CVPixelBufferGetHeightOfPlane(cvPixelBuffer, planeIndex)
-            var sourceBaseAddress = sourceBuffers[planeIndex].data
-            let rowOfBytes = malloc(bytesPerRow*MemoryLayout<UInt8>.size)
-            for _ in 0 ..< height {
-                memcpy(rowOfBytes, sourceBaseAddress, bytesPerRow)
-                memcpy(destBaseAddress, rowOfBytes, bytesPerRow)
-                sourceBaseAddress = sourceBaseAddress! + bytesPerRow
-                destBaseAddress = destBaseAddress! + bytesPerRow
-             }
-            free(rowOfBytes)
-        }
-    */
-        /*
-         On analysing the properties of the vImage_Buffers and the corresponding planes of
-         the CVPixelBuffer object, we notice their `rowBytes` and `bytesPerRow` are the same.
-         Furthermore, we know that the first pixel is at the top-left of the 2D region.
-         Therefore, the entire 2D regions of all 3 vImage_Buffers can be copied to
-         the 2D regions of the 3 CVPixelBuffer planes.
-         */
-        // Optimised copy. We can copy an entire plane instead of row by row
-        for planeIndex in 0 ..< sourceBuffers.count {
-            let destBaseAddress = CVPixelBufferGetBaseAddressOfPlane(cvPixelBuffer, planeIndex)
-            memcpy(destBaseAddress,
-                   sourceBuffers[planeIndex].data,
-                   sourceBuffers[planeIndex].rowBytes*Int(sourceBuffers[planeIndex].height))
-        }
-
-        CVPixelBufferUnlockBaseAddress(cvPixelBuffer, .readOnly)
-    }
-
     /*
      Convert the CVPixelBuffer to an ARGB-based vImageBuffer.
-     Initialise the source luminance and blue chrominance and red chrominance vImage buffers
-     directly from the three planes of the pixel buffer object.
+     Initialise the luminance, blue-difference chrominance and red-difference chrominance
+     vImage buffers directly from the three planes of the pixel buffer object.
     */
     func convertYp_Cb_CrToARGB(_ pixelBuffer: CVPixelBuffer)
     {
