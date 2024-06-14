@@ -237,37 +237,12 @@ class ViewController: NSViewController
             ypCbCr8PlanarBuffers,   // dests
             nil,
             vImage_Flags(kvImageNoFlags))
-        // On return from the above call, the 2D `data` regions will be populated with pixels.
+ 
+        // On return from the above call, the 2D `data` regions of the 2 vImage_Buffer objects
+        // and 2 planes of the CVPixelBuffer will be populated with pixels.
 
-        // Copy pixels from the vImage_Buffers objects to the corresponding CVPixelBuffer planes.
-        copyPixels(from: ypCbCr8PlanarBuffers,
-                   to: cvPixelBuffer!)
         CVPixelBufferUnlockBaseAddress(cvPixelBuffer!, .readOnly)
         return cvPixelBuffer
-    }
-
-    func copyPixels(from sourceBuffers: [vImage_Buffer],
-                    to cvPixelBuffer: CVPixelBuffer)
-    {
-        assert(CVPixelBufferGetPlaneCount(cvPixelBuffer) == 2,
-               "2 planes expected")
-        CVPixelBufferLockBaseAddress(cvPixelBuffer,
-                                     CVPixelBufferLockFlags(rawValue: 0))
-        // For debugging:
-        // vImage_Buffer(data: Optional(0x0000000108800020), height: 600, width: 800, rowBytes: 800)
-        // vImage_Buffer(data: Optional(0x0000000108875320), height: 600, width: 800, rowBytes: 800)
-        // <Plane 0 width=800 height=600 bytesPerRow=800>   // 1 byte/pixel
-        // <Plane 1 width=400 height=300 bytesPerRow=800>   // 2 bytes/pixel
-
-        // Optimised copy. We can copy an entire plane instead of row by row
-        for planeIndex in 0 ..< sourceBuffers.count {
-            let destBaseAddress = CVPixelBufferGetBaseAddressOfPlane(cvPixelBuffer, planeIndex)
-            memcpy(destBaseAddress,
-                   sourceBuffers[planeIndex].data,
-                   sourceBuffers[planeIndex].rowBytes*Int(sourceBuffers[planeIndex].height))
-        }
-
-        CVPixelBufferUnlockBaseAddress(cvPixelBuffer, .readOnly)
     }
 
     /*
