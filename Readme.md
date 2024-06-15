@@ -50,9 +50,8 @@ a) create 2 or more vImage_Buffer objects directly from the CVPixelBuffer object
     
 ``` 
 
-b) instantiate 2 or 3 instances of MTLTextures, copying pixels from the planes of CVPixelBuffer and send the MTLTextures objects to a kernel function to convert into an RGBA formatted MTLTexture. A pair of vertex-fragment functions is required to display the constituted image on the screen. This approach also allows the 3 separate luminance (Y), Cb chrominance and Cr chrominance channels or 2 separate luminance (Y) and two-channel chrominance (CbCr) channels to be saved.
+b) instantiate 2 or 3 instances of MTLTextures, copying pixels from the planes of CVPixelBuffer and sending the MTLTexture objects to a kernel function to convert into an RGBA formatted MTLTexture. A pair of vertex-fragment functions is required to display the constituted image on the screen. This approach also allows the 3 separate luminance (Y), Cb chrominance and Cr chrominance channels or 2 separate luminance (Y) and two-channel chrominance (CbCr) channels to be saved.
 
-c) Set up a call to the function **vImageBuffer_InitForCopyFromCVPixelBuffer**
 
 <br />
 <br />
